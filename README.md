@@ -1,0 +1,2 @@
+# Dine-Quick-Smart-Restaurant-Ordering-and-Kitchen-Management-System
+Dine Quick is a web-based restaurant ordering and management system that allows customers to browse a digital menu, add items to a cart, and place orders online. The system uses Python Flask, SQLite3, HTML, Bootstrap, and JavaScript to manage orders, track status updates, calculate bills, and streamline kitchen and admin operations.
