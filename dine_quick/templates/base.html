@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dine Quick{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --saffron:    #E8580A;
+      --saffron-lt: #FF7A35;
+      --saffron-dk: #B8420A;
+      --cream:      #FDF6EC;
+      --ink:        #1A1410;
+      --ink-60:     #6B5B4E;
+      --ink-20:     #EDE8E3;
+      --leaf:       #2D6A3F;
+      --leaf-lt:    #E8F5EC;
+      --amber:      #F5A623;
+      --red:        #D94B2B;
+      --surface:    #FFFFFF;
+      --radius:     12px;
+      --radius-lg:  20px;
+      --shadow-sm:  0 1px 3px rgba(26,20,16,.08);
+      --shadow-md:  0 4px 16px rgba(26,20,16,.10);
+      --shadow-lg:  0 12px 40px rgba(26,20,16,.14);
+      --font-display: 'Syne', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Top nav ── */
+    .topnav {
+      background: var(--ink);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topnav-brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--saffron);
+      text-decoration: none;
+      letter-spacing: -.5px;
+      margin-right: auto;
+    }
+    .topnav-brand span { color: #fff; }
+    .topnav a.nav-link {
+      color: rgba(255,255,255,.65);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: all .18s;
+    }
+    .topnav a.nav-link:hover,
+    .topnav a.nav-link.active {
+      background: rgba(255,255,255,.10);
+      color: #fff;
+    }
+    .topnav a.nav-link.nav-kitchen { color: var(--amber); }
+    .topnav a.nav-link.nav-admin   { color: var(--saffron-lt); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: .9rem;
+      cursor: pointer;
+      border: none;
+      transition: all .18s;
+      text-decoration: none;
+    }
+    .btn-primary  { background: var(--saffron); color: #fff; }
+    .btn-primary:hover  { background: var(--saffron-dk); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,88,10,.35); }
+    .btn-success  { background: var(--leaf); color: #fff; }
+    .btn-success:hover  { background: #245533; transform: translateY(-1px); }
+    .btn-ghost    { background: transparent; color: var(--ink); border: 1.5px solid var(--ink-20); }
+    .btn-ghost:hover    { background: var(--ink-20); }
+    .btn-danger   { background: var(--red); color: #fff; }
+    .btn-danger:hover   { background: #b53d24; }
+    .btn-sm { padding: 6px 14px; font-size: .82rem; border-radius: 8px; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .card-body { padding: 20px; }
+
+    /* ── Badges / Status ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .badge-placed  { background: #FFF3CD; color: #856404; }
+    .badge-cooking { background: #FFE4CC; color: #B8420A; }
+    .badge-served  { background: var(--leaf-lt); color: var(--leaf); }
+    .badge-avail   { background: var(--leaf-lt); color: var(--leaf); }
+    .badge-unavail { background: #FDECEA; color: var(--red); }
+
+    /* ── Misc ── */
+    .container  { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .container-sm { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+    .page-body  { padding: 32px 0 60px; }
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--ink);
+      margin-bottom: 20px;
+    }
+    .divider { border: none; border-top: 1.5px solid var(--ink-20); margin: 24px 0; }
+    .text-muted { color: var(--ink-60); font-size: .88rem; }
+    .text-saffron { color: var(--saffron); }
+    .text-leaf  { color: var(--leaf); }
+    .mt-4 { margin-top: 16px; }
+    .mt-8 { margin-top: 32px; }
+    .gap-2 { gap: 8px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+    @media(max-width:768px) {
+      .grid-4,.grid-3 { grid-template-columns: repeat(2,1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media(max-width:480px) {
+      .grid-4,.grid-3,.grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+    }
+    .toast {
+      background: var(--ink); color: #fff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: .88rem;
+      box-shadow: var(--shadow-lg);
+      animation: slideIn .25s ease;
+      max-width: 320px;
+    }
+    .toast.success { border-left: 4px solid var(--leaf); }
+    .toast.error   { border-left: 4px solid var(--red); }
+    .toast.info    { border-left: 4px solid var(--amber); }
+    @keyframes slideIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="topnav">
+    <a href="/" class="topnav-brand">Dine<span>Quick</span></a>
+    <a href="/kitchen" class="nav-link nav-kitchen">🍳 Kitchen</a>
+    <a href="/admin" class="nav-link nav-admin">⚙️ Admin</a>
+  </nav>
+
+  {% block body %}{% endblock %}
+
+  <div id="toast-container"></div>
+
+  <script>
+    function showToast(msg, type='info') {
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      document.getElementById('toast-container').appendChild(t);
+      setTimeout(() => { t.style.animation = 'fadeOut .3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3000);
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

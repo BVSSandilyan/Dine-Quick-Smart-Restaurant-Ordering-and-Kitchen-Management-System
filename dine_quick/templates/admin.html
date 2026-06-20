@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard | {{ settings.restaurant_name }}{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Admin tabs ── */
+  .admin-tabs {
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--ink-20);
+    padding: 0 24px;
+    display: flex; gap: 0;
+    position: sticky; top: 60px; z-index: 90;
+  }
+  .admin-tab {
+    padding: 14px 20px;
+    border: none; background: none;
+    font-family: var(--font-body); font-weight: 500; font-size: .9rem;
+    color: var(--ink-60); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1.5px;
+    transition: all .18s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .admin-tab:hover { color: var(--ink); }
+  .admin-tab.active { color: var(--saffron); border-bottom-color: var(--saffron); font-weight: 600; }
+
+  .admin-panel { display: none; padding: 32px 0 60px; }
+  .admin-panel.active { display: block; }
+
+  /* ── Stats cards ── */
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 20px 24px; box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--ink-20);
+  }
+  .stat-card.orange { border-left-color: var(--saffron); }
+  .stat-card.green  { border-left-color: var(--leaf); }
+  .stat-card.amber  { border-left-color: var(--amber); }
+  .stat-card.ink    { border-left-color: var(--ink); }
+  .stat-num {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 2rem; color: var(--ink); line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: .82rem; color: var(--ink-60); font-weight: 500; }
+
+  /* ── Menu table ── */
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface); border-radius: var(--radius-lg);
+    overflow: hidden; box-shadow: var(--shadow-sm);
+  }
+  .data-table th {
+    background: var(--ink); color: rgba(255,255,255,.8);
+    padding: 12px 16px; text-align: left;
+    font-size: .8rem; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .data-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--ink-20);
+    font-size: .88rem;
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--cream); }
+
+  /* ── Inline edit ── */
+  .inline-input {
+    padding: 5px 10px;
+    border: 1.5px solid var(--ink-20);
+    border-radius: 8px;
+    font-family: var(--font-body); font-size: .85rem;
+    color: var(--ink); background: var(--cream);
+    outline: none; transition: border-color .18s;
+    width: 100%; min-width: 60px;
+  }
+  .inline-input:focus { border-color: var(--saffron); }
+  .inline-toggle {
+    position: relative; display: inline-flex;
+    align-items: center; cursor: pointer;
+    width: 44px; height: 24px;
+  }
+  .inline-toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: #ccc; border-radius: 12px;
+    transition: background .2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute; top:3px; left:3px;
+    width: 18px; height: 18px;
+    background: #fff; border-radius: 50%;
+    transition: transform .2s;
+  }
+  .inline-toggle input:checked + .toggle-slider { background: var(--leaf); }
+  .inline-toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+  /* ── Add item form ── */
+  .add-form {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 28px;
+  }
+  .add-form h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 1.05rem; margin-bottom: 16px;
+  }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: .78rem; font-weight: 600; color: var(--ink-60); letter-spacing: .04em; text-transform: uppercase; }
+  .form-input {
+    padding: 10px 12px;
+    border: 1.5px solid var(--ink-20); border-radius: 10px;
+    font-family: var(--font-body); font-size: .88rem;
+    outline: none; transition: border-color .18s;
+    background: var(--cream); color: var(--ink);
+  }
+  .form-input:focus { border-color: var(--saffron); }
+
+  /* ── Settings form ── */
+  .settings-card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 28px; box-shadow: var(--shadow-sm); max-width: 560px;
+  }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid var(--ink-20);
+    gap: 20px;
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-weight: 600; font-size: .9rem; }
+  .setting-desc  { font-size: .8rem; color: var(--ink-60); margin-top: 2px; }
+  .setting-input {
+    padding: 9px 14px;
+    border: 1.5px solid var(--ink-20); border-radius: 10px;
+    font-family: var(--font-body); font-size: .9rem;
+    outline: none; text-align: right; min-width: 130px;
+    transition: border-color .18s;
+    background: var(--cream); color: var(--ink);
+  }
+  .setting-input:focus { border-color: var(--saffron); }
+
+  /* ── Orders log ── */
+  .order-row {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px;
+    border: 1.5px solid var(--ink-20); box-shadow: var(--shadow-sm);
+  }
+  .order-row-head { display: flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
+  .order-items-line { font-size: .82rem; color: var(--ink-60); }
+  .filter-bar { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .filter-btn {
+    padding: 7px 16px; border-radius: 99px;
+    border: 2px solid var(--ink-20); background: var(--surface);
+    color: var(--ink-60); font-weight: 600; font-size: .82rem;
+    cursor: pointer; transition: all .18s;
+  }
+  .filter-btn.active { background: var(--saffron); border-color: var(--saffron); color: #fff; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div style="background:var(--ink);padding:16px 24px;display:flex;align-items:center;gap:12px;color:#fff">
+  <div style="font-family:var(--font-display);font-weight:800;font-size:1.15rem">⚙️ Admin Dashboard</div>
+  <div style="margin-left:auto;font-size:.82rem;color:rgba(255,255,255,.5)">{{ settings.restaurant_name }}</div>
+</div>
+
+<div class="admin-tabs">
+  <button class="admin-tab active" data-tab="stats">📊 Overview</button>
+  <button class="admin-tab" data-tab="menu">🍽️ Menu Items</button>
+  <button class="admin-tab" data-tab="orders">📋 Orders</button>
+  <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
+</div>
+
+<!-- ── Overview ── -->
+<div id="tab-stats" class="admin-panel active">
+  <div class="container">
+    <div class="grid-4" style="margin-bottom:32px">
+      <div class="stat-card orange">
+        <div class="stat-num" id="sTotalOrders">—</div>
+        <div class="stat-label">Total Orders (All Time)</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-num" id="sActiveOrders">—</div>
+        <div class="stat-label">Active Orders Right Now</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="sServedToday">—</div>
+        <div class="stat-label">Served Today</div>
+      </div>
+      <div class="stat-card ink">
+        <div class="stat-num" id="sRevenue">—</div>
+        <div class="stat-label">Revenue Today (excl. tax)</div>
+      </div>
+    </div>
+    <h2 class="section-title">Recent Orders</h2>
+    <div id="recentOrders">Loading…</div>
+  </div>
+</div>
+
+<!-- ── Menu Items ── -->
+<div id="tab-menu" class="admin-panel">
+  <div class="container">
+    <div class="add-form">
+      <h3>+ Add New Menu Item</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Item Name</label>
+          <input class="form-input" id="newName" placeholder="e.g. Chicken Tikka">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input" id="newCat">
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price ({{ settings.currency_symbol }})</label>
+          <input class="form-input" id="newPrice" type="number" placeholder="250">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prep Time (min)</label>
+          <input class="form-input" id="newPrep" type="number" placeholder="15">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="newDesc" placeholder="Brief description of the dish">
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="addItem()">+ Add Item</button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="data-table" id="menuTable">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th style="width:100px">Price</th>
+            <th style="width:90px">Prep (min)</th>
+            <th style="width:80px">Available</th>
+            <th style="width:80px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="menuBody">
+          {% for item in items %}
+          <tr id="row-{{ item.id }}">
+            <td>
+              <div style="font-weight:600">{{ item.name }}</div>
+              <div style="font-size:.78rem;color:var(--ink-60)">{{ item.description[:60] }}{% if item.description|length > 60 %}…{% endif %}</div>
+            </td>
+            <td>
+              <span class="badge" style="background:var(--ink-20);color:var(--ink)">{{ item.cat_name }}</span>
+            </td>
+            <td>
+              <input class="inline-input" type="number" value="{{ item.price }}"
+                     onchange="patchItem('{{ item.id }}', 'price', this.value)" style="width:80px">
+            </td>
+            <td>
+              <input class="inline-input" type="number" value="{{ item.prep_time }}"
+                     onchange="patchItem('{{ item.id }}', 'prep_time', this.value)" style="width:70px">
+            </td>
+            <td>
+              <label class="inline-toggle">
+                <input type="checkbox" {% if item.available %}checked{% endif %}
+                       onchange="patchItem('{{ item.id }}', 'available', this.checked ? 1 : 0)">
+                <span class="toggle-slider"></span>
+              </label>
+            </td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="deleteItem('{{ item.id }}')">✕</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Orders Log ── -->
+<div id="tab-orders" class="admin-panel">
+  <div class="container">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterOrders('all', this)">All</button>
+      <button class="filter-btn" onclick="filterOrders('Placed', this)">📋 Placed</button>
+      <button class="filter-btn" onclick="filterOrders('Cooking', this)">🔥 Cooking</button>
+      <button class="filter-btn" onclick="filterOrders('Served', this)">✅ Served</button>
+    </div>
+    <div id="ordersLog">Loading…</div>
+  </div>
+</div>
+
+<!-- ── Settings ── -->
+<div id="tab-settings" class="admin-panel">
+  <div class="container">
+    <div class="settings-card">
+      <h2 class="section-title">Restaurant Settings</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Restaurant Name</div>
+          <div class="setting-desc">Shown across the menu and receipts</div>
+        </div>
+        <input class="setting-input" id="set-name" value="{{ settings.restaurant_name }}">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">GST / Tax Rate (%)</div>
+          <div class="setting-desc">Applied to all orders at checkout</div>
+        </div>
+        <input class="setting-input" id="set-tax" type="number" step="0.5" value="{{ settings.tax_rate }}">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Currency Symbol</div>
+          <div class="setting-desc">Displayed next to all prices</div>
+        </div>
+        <input class="setting-input" id="set-currency" value="{{ settings.currency_symbol }}" style="max-width:80px">
+      </div>
+      <div style="margin-top:20px">
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const CURRENCY = "{{ settings.currency_symbol }}";
+
+  // ── Tab switching ──
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Stats ──
+  async function loadStats() {
+    const [statsRes, ordersRes] = await Promise.all([
+      fetch('/api/admin/stats'),
+      fetch('/api/orders/all')
+    ]);
+    const stats  = await statsRes.json();
+    const orders = await ordersRes.json();
+
+    document.getElementById('sTotalOrders').textContent  = stats.total_orders;
+    document.getElementById('sActiveOrders').textContent = stats.active_orders;
+    document.getElementById('sServedToday').textContent  = stats.served_today;
+    document.getElementById('sRevenue').textContent      = CURRENCY + stats.revenue_today.toLocaleString('en-IN');
+
+    const badgeClass = { Placed: 'badge-placed', Cooking: 'badge-cooking', Served: 'badge-served' };
+    const recentHtml = orders.slice(0,15).map(o => `
+      <div class="order-row">
+        <div class="order-row-head">
+          <strong>#${o.id}</strong>
+          <span class="badge ${badgeClass[o.status]}">${o.status}</span>
+          <span style="font-weight:600">Table ${o.table_number}</span>
+          <span class="text-muted">${o.created_at}</span>
+          <span style="margin-left:auto;font-weight:700;color:var(--saffron)">${CURRENCY}${o.total}</span>
+        </div>
+        <div class="order-items-line">${o.items.map(i => `${i.quantity}× ${i.name}`).join(' · ')}</div>
+      </div>`).join('');
+    document.getElementById('recentOrders').innerHTML = recentHtml || '<p class="text-muted">No orders yet.</p>';
+  }
+
+  // ── Orders log ──
+  let allOrdersCache = [];
+  let currentFilter = 'all';
+
+  async function loadOrdersLog() {
+    const res = await fetch('/api/orders/all');
+    allOrdersCache = await res.json();
+    renderOrdersLog();
+  }
+
+  function filterOrders(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrdersLog();
+  }
+
+  function renderOrdersLog() {
+    const list = currentFilter === 'all' ? allOrdersCache : allOrdersCache.filter(o => o.status === currentFilter);
+    const badgeClass = { Placed: 'badge-placed', Cooking: 'badge-cooking', Served: 'badge-served' };
+    const html = list.map(o => `
+      <div class="order-row">
+        <div class="order-row-head">
+          <strong>#${o.id}</strong>
+          <span class="badge ${badgeClass[o.status]}">${o.status}</span>
+          <span style="font-weight:600">Table ${o.table_number}</span>
+          <span class="text-muted">${o.created_at}</span>
+          <span style="margin-left:auto;font-weight:700;color:var(--saffron)">${CURRENCY}${o.total}</span>
+        </div>
+        <div class="order-items-line">${o.items.map(i=>`${i.quantity}× ${i.name} (${CURRENCY}${(i.quantity*i.unit_price).toFixed(0)})`).join(' · ')}</div>
+        ${o.notes ? `<div style="font-size:.8rem;color:var(--amber);margin-top:4px">📝 ${o.notes}</div>` : ''}
+      </div>`).join('');
+    document.getElementById('ordersLog').innerHTML = html || '<p class="text-muted">No orders match this filter.</p>';
+  }
+
+  // ── Menu actions ──
+  async function addItem() {
+    const name = document.getElementById('newName').value.trim();
+    const price = parseFloat(document.getElementById('newPrice').value);
+    if (!name || !price) { showToast('Name and price are required', 'error'); return; }
+    const payload = {
+      name,
+      category_id: parseInt(document.getElementById('newCat').value),
+      price,
+      description: document.getElementById('newDesc').value.trim(),
+      prep_time: parseInt(document.getElementById('newPrep').value) || 10,
+      available: 1
+    };
+    const res = await fetch('/api/admin/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Item added! Refreshing…', 'success');
+      setTimeout(() => location.reload(), 1200);
+    }
+  }
+
+  async function patchItem(id, field, value) {
+    await fetch(`/api/admin/items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value })
+    });
+    showToast('Saved', 'success');
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Remove this item from the menu?')) return;
+    await fetch(`/api/admin/items/${id}`, { method: 'DELETE' });
+    document.getElementById(`row-${id}`)?.remove();
+    showToast('Item removed', 'info');
+  }
+
+  // ── Settings ──
+  async function saveSettings() {
+    const payload = {
+      restaurant_name: document.getElementById('set-name').value.trim(),
+      tax_rate: document.getElementById('set-tax').value,
+      currency_symbol: document.getElementById('set-currency').value.trim()
+    };
+    const res = await fetch('/api/admin/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) showToast('Settings saved ✓', 'success');
+  }
+
+  // Init
+  loadStats();
+  loadOrdersLog();
+</script>
+{% endblock %}

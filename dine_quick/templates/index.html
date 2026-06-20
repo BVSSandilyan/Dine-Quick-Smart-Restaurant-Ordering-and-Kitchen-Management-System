@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ settings.restaurant_name }} – Select Your Table{% endblock %}
+
+{% block head %}
+<style>
+  .hero {
+    background: var(--ink);
+    padding: 60px 20px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 100%, rgba(232,88,10,.28), transparent);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: .8rem; font-weight: 600; letter-spacing: .12em;
+    color: var(--saffron); text-transform: uppercase; margin-bottom: 16px;
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -.03em;
+    margin-bottom: 16px;
+  }
+  .hero-title span { color: var(--saffron); }
+  .hero-sub {
+    color: rgba(255,255,255,.55);
+    font-size: 1rem;
+    max-width: 420px; margin: 0 auto 32px;
+  }
+  .hero-steps {
+    display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .hero-step {
+    display: flex; align-items: center; gap: 8px;
+    color: rgba(255,255,255,.65);
+    font-size: .85rem;
+  }
+  .hero-step-icon {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,.08);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+
+  /* Tables grid */
+  .tables-section { padding: 48px 0 60px; }
+  .tables-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .table-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    color: var(--ink);
+    border: 2px solid transparent;
+    transition: all .2s;
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+  .table-card::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0; height: 3px;
+    background: var(--saffron);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .25s;
+  }
+  .table-card:hover { border-color: var(--saffron); box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .table-card:hover::before { transform: scaleX(1); }
+  .table-num {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--saffron);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .table-name {
+    font-weight: 600;
+    font-size: .95rem;
+    margin-bottom: 4px;
+  }
+  .table-seats {
+    font-size: .8rem;
+    color: var(--ink-60);
+  }
+  .table-qr-hint {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--ink-20);
+    font-size: .78rem;
+    color: var(--saffron);
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .info-strip {
+    background: var(--saffron);
+    padding: 16px 20px;
+    display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+  }
+  .info-item {
+    color: #fff; font-size: .88rem; display: flex; gap: 8px; align-items: center;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="hero">
+  <p class="hero-eyebrow">Contactless Dining</p>
+  <h1 class="hero-title">{{ settings.restaurant_name }}<br><span>Order at Your Pace.</span></h1>
+  <p class="hero-sub">Browse the full menu, build your order, and send it straight to the kitchen — no waiting for a waiter.</p>
+  <div class="hero-steps">
+    <div class="hero-step"><div class="hero-step-icon">📍</div> Pick your table</div>
+    <div class="hero-step"><div class="hero-step-icon">🍽️</div> Browse the menu</div>
+    <div class="hero-step"><div class="hero-step-icon">✅</div> Place your order</div>
+    <div class="hero-step"><div class="hero-step-icon">⏱️</div> Track it live</div>
+  </div>
+</div>
+
+<div class="info-strip">
+  <div class="info-item">🌿 Fresh ingredients daily</div>
+  <div class="info-item">⚡ Average wait: 15–20 min</div>
+  <div class="info-item">📱 Order from your phone</div>
+</div>
+
+<section class="tables-section">
+  <div class="container">
+    <div class="tables-header">
+      <h2 class="section-title" style="margin-bottom:0">Select Your Table</h2>
+      <span class="text-muted">{{ tables|length }} tables available</span>
+    </div>
+    <div class="grid-4">
+      {% for table in tables %}
+      <a href="/table/{{ table.number }}" class="table-card">
+        <div class="table-num">{{ table.number }}</div>
+        <div class="table-name">{{ table.name }}</div>
+        <div class="table-seats">{{ table.seats }} seats</div>
+        <div class="table-qr-hint">→ Open Menu</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

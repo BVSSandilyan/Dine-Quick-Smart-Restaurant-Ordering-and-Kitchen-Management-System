@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block title %}Kitchen Monitor | {{ settings.restaurant_name }}{% endblock %}
+
+{% block head %}
+<style>
+  .kitchen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 24px;
+    align-items: start;
+  }
+  @media(max-width: 950px) {
+    .kitchen-grid { grid-template-columns: 1fr; }
+  }
+
+  .kitchen-column {
+    background: #111;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 70vh;
+    border: 1px solid #222;
+  }
+  .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #222;
+    margin-bottom: 16px;
+  }
+  .column-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ticket-count {
+    background: #222;
+    color: #aaa;
+    font-size: .8rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* ── Kitchen KDS Ticket Card ── */
+  .ticket-card {
+    background: #1c1c1e;
+    border: 1px solid #2c2c2e;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    animation: fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .ticket-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #2c2c2e;
+  }
+  .ticket-table {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--saffron);
+  }
+  .ticket-time {
+    font-size: .78rem;
+    color: #8e8e93;
+  }
+
+  .ticket-items {
+    margin-bottom: 14px;
+  }
+  .ticket-item-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: .95rem;
+    color: #e5e5ea;
+    margin-bottom: 5px;
+  }
+  .ticket-item-qty {
+    font-weight: 700;
+    color: var(--saffron);
+    margin-right: 6px;
+  }
+  .ticket-notes {
+    background: rgba(232, 88, 10, 0.08);
+    border-left: 3px solid var(--saffron);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: .8rem;
+    color: #ff9f0a;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .ticket-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .kds-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .kds-btn-cook { background: #3a3a3c; color: #fff; }
+  .kds-btn-cook:hover { background: var(--saffron); }
+  .kds-btn-serve { background: #30d158; color: #000; }
+  .kds-btn-serve:hover { background: #28b84b; }
+
+  .kds-empty {
+    text-align: center;
+    color: #636366;
+    padding: 40px 10px;
+    font-size: .9rem;
+  }
+  .kds-empty-icon { font-size: 2.2rem; margin-bottom: 8px; block-size: auto; }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Top Header Layout Element styled for dark kitchen screen dashboard appearance -->
+<div style="background:#111; padding: 20px 0; border-bottom: 1px solid #222;">
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h2 style="color:#fff; font-family:var(--font-display); font-weight:800; font-size:1.4rem; display:flex; align-items:center; gap:10px;">
+        🍳 Kitchen Operations Monitor <span style="font-size:0.8rem; background:#ff453a; color:#fff; padding:2px 8px; border-radius:4px; font-family:monospace;">LIVE</span>
+      </h2>
+      <p style="color:#8e8e93; font-size:0.85rem; margin-top:2px;">Real-time order management dashboard context queue</p>
+    </div>
+    <div id="connectionStatus" style="font-size:0.8rem; color:#30d158; background:rgba(48,209,88,0.1); padding:6px 12px; border-radius:6px; font-weight:600;">
+      ● Synchronized
+    </div>
+  </div>
+</div>
+
+<div class="container" style="margin-bottom: 50px;">
+  <div class="kitchen-grid">
+    
+    <!-- Column 1: New / Placed Orders -->
+    <div class="kitchen-column">
+      <div class="column-header">
+        <div class="column-title">📋 New Orders</div>
+        <span class="ticket-count" id="count-placed">0</span>
+      </div>
+      <div id="queue-placed"></div>
+    </div>
+
+    <!-- Column 2: Preparation Cooking -->
+    <div class="kitchen-column">
+      <div class="column-header">
+        <div class="column-title">🔥 In Preparation</div>
+        <span class="ticket-count" id="count-cooking">0</span>
+      </div>
+      <div id="queue-cooking"></div>
+    </div>
+
+    <!-- Column 3: Completed / Recently Served -->
+    <div class="kitchen-column">
+      <div class="column-header">
+        <div class="column-title">✅ Recently Served</div>
+        <span class="ticket-count" id="count-served">0</span>
+      </div>
+      <div id="queue-served"></div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let completedOrdersCache = []; // Local storage tracking recently cleared tickets context
+
+  async function fetchKitchenTickets() {
+    try {
+      // 1. Fetch current live (Placed + Cooking) pipeline
+      const resLive = await fetch('/api/orders/live');
+      if(!resLive.ok) throw new Error("API status read failure");
+      const activeTickets = await resLive.json();
+
+      // 2. Fetch comprehensive log to pull context for recently completed items
+      const resAll = await fetch('/api/orders/all');
+      let servedTickets = [];
+      if(resAll.ok) {
+        const allItems = await resAll.json();
+        servedTickets = allItems.filter(o => o.status === 'Served').slice(0, 5); 
+      }
+
+      document.getElementById('connectionStatus').innerHTML = "● Synchronized";
+      document.getElementById('connectionStatus').style.color = "#30d158";
+      document.getElementById('connectionStatus').style.background = "rgba(48,209,88,0.1)";
+
+      renderColumns(activeTickets, servedTickets);
+    } catch(err) {
+      console.error("KDS sync loop failed:", err);
+      document.getElementById('connectionStatus').innerHTML = "▲ Connection Error";
+      document.getElementById('connectionStatus').style.color = "#ff453a";
+      document.getElementById('connectionStatus').style.background = "rgba(255,69,58,0.1)";
+    }
+  }
+
+  function renderColumns(active, served) {
+    const placedCol = document.getElementById('queue-placed');
+    const cookingCol = document.getElementById('queue-cooking');
+    const servedCol = document.getElementById('queue-served');
+
+    let placedHtml = '';
+    let cookingHtml = '';
+    let servedHtml = '';
+
+    let cPlaced = 0, cCooking = 0;
+
+    active.forEach(ticket => {
+      const timeStr = ticket.created_at ? ticket.created_at.slice(11, 16) : '--:--';
+      let itemsHtml = ticket.items.map(i => `
+        <div class="ticket-item-row">
+          <span><span class="ticket-item-qty">${i.quantity}x</span> ${i.name}</span>
+        </div>
+      `).join('');
+
+      let noteHtml = ticket.notes ? `<div class="ticket-notes">💡 ${ticket.notes}</div>` : '';
+      
+      let actionButtons = '';
+      if(ticket.status === 'Placed') {
+        actionButtons = `<button class="kds-btn kds-btn-cook" onclick="updateStatus(${ticket.id}, 'Cooking')">Start Cooking 🔥</button>`;
+      } else if(ticket.status === 'Cooking') {
+        actionButtons = `<button class="kds-btn kds-btn-serve" onclick="updateStatus(${ticket.id}, 'Served')">Ready / Serve ✓</button>`;
+      }
+
+      let cardMarkup = `
+        <div class="ticket-card">
+          <div class="ticket-meta">
+            <span class="ticket-table">Table ${ticket.table_number}</span>
+            <span class="ticket-time">🕒 ${timeStr} (#${ticket.id})</span>
+          </div>
+          <div class="ticket-items">${itemsHtml}${noteHtml}</div>
+          <div class="ticket-actions">${actionButtons}</div>
+        </div>
+      `;
+
+      if(ticket.status === 'Placed') { placedHtml += cardMarkup; cPlaced++; }
+      else if(ticket.status === 'Cooking') { cookingHtml += cardMarkup; cCooking++; }
+    });
+
+    served.forEach(ticket => {
+      const finishTime = ticket.updated_at ? ticket.updated_at.slice(11, 16) : '--:--';
+      let itemsHtml = ticket.items.map(i => `
+        <div class="ticket-item-row" style="color:#8e8e93;">
+          <span>${i.quantity}x ${i.name}</span>
+        </div>
+      `).join('');
+
+      servedHtml += `
+        <div class="ticket-card" style="opacity: 0.65; border-color: #222;">
+          <div class="ticket-meta">
+            <span class="ticket-table" style="color:#8e8e93;">Table ${ticket.table_number}</span>
+            <span class="ticket-time">Done ${finishTime}</span>
+          </div>
+          <div class="ticket-items">${itemsHtml}</div>
+        </div>
+      `;
+    });
+
+    // Handle Empty placeholders
+    placedCol.innerHTML = placedHtml || '<div class="kds-empty"><div class="kds-empty-icon">🛎️</div>No new orders</div>';
+    cookingCol.innerHTML = cookingHtml || '<div class="kds-empty"><div class="kds-empty-icon">👨‍🍳</div>Nothing cooking</div>';
+    servedCol.innerHTML = servedHtml || '<div class="kds-empty"><div class="kds-empty-icon">🍽️</div>None yet</div>';
+
+    document.getElementById('count-placed').textContent = cPlaced;
+    document.getElementById('count-cooking').textContent = cCooking;
+    document.getElementById('count-served').textContent = served.length;
+  }
+
+  async function updateStatus(orderId, nextStatus) {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if(res.ok) {
+        fetchKitchenTickets();
+      }
+    } catch(e) {
+      console.error("Failed to mutate order processing state token:", e);
+    }
+  }
+
+  // Initial trigger + start polling tracking interval cycle every 4 seconds
+  fetchKitchenTickets();
+  setInterval(fetchKitchenTickets, 4000);
+</script>
+{% endblock %}
