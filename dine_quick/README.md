@@ -1,4 +1,4 @@
-# 🍽️ Dine Quick — QR Table Ordering App
+# 🍽️ Dine Quick —  Table Ordering App
 
 A contactless in-restaurant ordering platform. Customers scan a table-specific QR code (or link), browse the digital menu, place orders directly to the kitchen, and track progress in real time.
 
